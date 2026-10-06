@@ -45,7 +45,7 @@ workflows:
           -workspace "$IOS_WORKSPACE" \
           -scheme "$IOS_SCHEME" \
           -sdk iphoneos \
-          -configuration Debug \
+          -configuration Release \
           -archivePath "$CM_BUILD_DIR/frontend/SparkBank.xcarchive" \
           CODE_SIGNING_ALLOWED=NO
       - name: Copy .app file to new folder payload
