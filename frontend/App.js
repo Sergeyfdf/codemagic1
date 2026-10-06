@@ -134,7 +134,7 @@ export default function App() {
   const [isCardSelectionVisible, setIsCardSelectionVisible] = useState(false);
   const [activeCardDesignIndex, setActiveCardDesignIndex] = useState(0);
   const cardDesigns = [
-    require('./assets/card.png'),
+    require('./assets/card1.png'),
     require('./assets/card2.png'),
     require('./assets/card3.png')
   ];
