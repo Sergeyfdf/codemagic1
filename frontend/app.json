@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "SparkBank",
+    "slug": "sparkbank",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "backgroundColor": "#0e0e0e",
+    "icon": "./assets/icon1.png",
+    "userInterfaceStyle": "dark",
+    "jsEngine": "hermes",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sparkbank.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0e0e0e",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.sparkbank.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "splash": {
+      "backgroundColor": "#0e0e0e",
+      "image": "./assets/icon.png",
+      "resizeMode": "contain"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0E0E0E",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ]
+  }
+}

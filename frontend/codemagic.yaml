@@ -1,0 +1,64 @@
+workflows:
+  ios-unsigned-build:
+    name: iOS Unsigned Build (IPA)
+    instance_type: mac_mini_m2
+    # Если ты будешь запускать Codemagic из корня репозитория, а папка frontend внутри, мы переходим в неё:
+    working_directory: frontend
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/frontend/node_modules
+        - $HOME/Library/Caches/CocoaPods
+    environment:
+      node: 20
+      vars:
+        IOS_WORKSPACE: "ios/SparkBank.xcworkspace"
+        IOS_SCHEME: "SparkBank"
+    scripts:
+      - name: Install dependencies
+        script: npm install --legacy-peer-deps
+      - name: Install expo-cli
+        script: npm install -g expo-cli
+      - name: Expo Prebuild (Generate iOS Folder)
+        script: npx expo prebuild --platform ios --clean
+      - name: Install CocoaPods
+        script: cd ios && pod install
+      - name: Create ExportOptions.plist
+        script: |
+          cat > ios/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+      - name: Build IPA (unsigned)
+        script: |
+          xcodebuild archive \
+          -workspace "$IOS_WORKSPACE" \
+          -scheme "$IOS_SCHEME" \
+          -sdk iphoneos \
+          -configuration Debug \
+          -archivePath "$CM_BUILD_DIR/frontend/SparkBank.xcarchive" \
+          CODE_SIGNING_ALLOWED=NO
+      - name: Copy .app file to new folder payload
+        script: |
+          mkdir -p "$CM_BUILD_DIR/frontend/Payload"
+          cp -r "$CM_BUILD_DIR/frontend/SparkBank.xcarchive/Products/Applications/$IOS_SCHEME.app" "$CM_BUILD_DIR/frontend/Payload/"
+      - name: Create unsigned .ipa
+        script: |
+          cd "$CM_BUILD_DIR/frontend/Payload"
+          zip -r "$CM_BUILD_DIR/frontend/SparkBank.ipa" .
+      - name: Move .ipa to artifacts folder
+        script: |
+          mkdir -p "$CM_BUILD_DIR/frontend/build/ios/ipa"
+          mv "$CM_BUILD_DIR/frontend/SparkBank.ipa" "$CM_BUILD_DIR/frontend/build/ios/ipa/SparkBank.ipa"
+    artifacts:
+      - build/ios/ipa/*.ipa
