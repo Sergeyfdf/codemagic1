@@ -22,7 +22,13 @@
     "react-native-gesture-handler": "^3.3.0",
     "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "@expo/vector-icons": "*",
+    "expo-notifications": "*",
+    "expo-image-picker": "*",
+    "expo-splash-screen": "*",
+    "react-native-webview": "*",
+    "@react-native-async-storage/async-storage": "*"
   },
   "scripts": {
     "start": "expo start",
