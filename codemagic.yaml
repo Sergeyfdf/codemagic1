@@ -54,8 +54,8 @@ workflows:
           cp -r "$CM_BUILD_DIR/frontend/SparkBank.xcarchive/Products/Applications/$IOS_SCHEME.app" "$CM_BUILD_DIR/frontend/Payload/"
       - name: Create unsigned .ipa
         script: |
-          cd "$CM_BUILD_DIR/frontend/Payload"
-          zip -r "$CM_BUILD_DIR/frontend/SparkBank.ipa" .
+          cd "$CM_BUILD_DIR/frontend"
+          zip -r "$CM_BUILD_DIR/frontend/SparkBank.ipa" Payload
       - name: Move .ipa to artifacts folder
         script: |
           mkdir -p "$CM_BUILD_DIR/frontend/build/ios/ipa"
