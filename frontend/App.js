@@ -1113,13 +1113,14 @@ export default function App() {
               <View style={{ width: '80%', backgroundColor: '#1c1c1e', borderRadius: 24, padding: 24, maxHeight: '70%' }}>
                 <Text style={{ color: '#fff', fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' }}>Выберите валюту</Text>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  {['UAH', 'USD', 'EUR', 'PLN', 'GBP', 'CHF', 'CZK', 'CAD', 'AUD'].map(cur => (
+                  {['UAH - Гривна', 'USD - Доллар США', 'EUR - Евро', 'PLN - Злотый', 'GBP - Фунт', 'CHF - Франк', 'CZK - Крона', 'CAD - Канадский доллар', 'AUD - Австрал. доллар'].map(cur => (
                     <TouchableOpacity
                       key={cur}
                       style={{ paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}
                       onPress={() => {
-                        if (currencyPickerTarget === 'from') setConverterFrom(cur);
-                        else setConverterTo(cur);
+                        const code = cur.split(' ')[0];
+                        if (currencyPickerTarget === 'from') setConverterFrom(code);
+                        else setConverterTo(code);
                         setCurrencyPickerVisible(false);
                       }}
                     >
@@ -1798,43 +1799,45 @@ export default function App() {
               {menu3Tab === 'converter' && (
                 <View style={{ paddingBottom: 100 }}>
                   <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, marginBottom: 20 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 }}>
-                          <TextInput
-                            style={[styles.cashInput, { flex: 1, borderBottomWidth: 0, marginBottom: 0, padding: 10 }]}
-                            value={converterAmount}
-                            onChangeText={setConverterAmount}
-                            placeholder="Сумма"
-                            keyboardType="numeric"
-                            placeholderTextColor="rgba(255,255,255,0.3)"
-                          />
-                          <TouchableOpacity 
-                            style={{ padding: 10, justifyContent: 'center', minWidth: 60, alignItems: 'center' }}
-                            onPress={() => { setCurrencyPickerTarget('from'); setCurrencyPickerVisible(true); }}
-                          >
-                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{converterFrom} ▾</Text>
-                          </TouchableOpacity>
-                        </View>
+                    <View style={{ marginBottom: 15 }}>
+                      
+                      {/* У меня есть (FROM) */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, marginBottom: 15 }}>
+                        <TextInput
+                          style={[styles.cashInput, { flex: 1, borderBottomWidth: 0, marginBottom: 0, padding: 15, textAlign: 'left', fontSize: 24 }]}
+                          value={converterAmount}
+                          onChangeText={setConverterAmount}
+                          placeholder="0.00"
+                          keyboardType="numeric"
+                          placeholderTextColor="rgba(255,255,255,0.3)"
+                        />
+                        <TouchableOpacity 
+                          style={{ padding: 15, justifyContent: 'center', minWidth: 80, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.1)' }}
+                          onPress={() => { setCurrencyPickerTarget('from'); setCurrencyPickerVisible(true); }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>{converterFrom} ▾</Text>
+                        </TouchableOpacity>
                       </View>
                       
-                      <View style={{ paddingHorizontal: 15, justifyContent: 'center' }}>
-                        <Ionicons name="arrow-forward-outline" size={24} color="rgba(255,255,255,0.5)" />
+                      <View style={{ alignItems: 'center', marginBottom: 15 }}>
+                        <Ionicons name="swap-vertical-outline" size={28} color="rgba(255,255,255,0.5)" />
                       </View>
                       
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, height: 48, paddingHorizontal: 10 }}>
-                          <Text style={{ color: converterResult ? '#4ade80' : 'rgba(255,255,255,0.3)', flex: 1, fontSize: 16 }}>
-                            {converterResult ? converterResult : 'Результат'}
+                      {/* Я получу (TO) */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 }}>
+                        <View style={{ flex: 1, padding: 15, justifyContent: 'center' }}>
+                          <Text style={{ color: converterResult ? '#4ade80' : 'rgba(255,255,255,0.3)', fontSize: 24, fontWeight: '600' }}>
+                            {converterResult ? converterResult : '0.00'}
                           </Text>
-                          <TouchableOpacity 
-                            style={{ padding: 10, justifyContent: 'center', minWidth: 60, alignItems: 'center' }}
-                            onPress={() => { setCurrencyPickerTarget('to'); setCurrencyPickerVisible(true); }}
-                          >
-                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{converterTo} ▾</Text>
-                          </TouchableOpacity>
                         </View>
+                        <TouchableOpacity 
+                          style={{ padding: 15, justifyContent: 'center', minWidth: 80, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.1)' }}
+                          onPress={() => { setCurrencyPickerTarget('to'); setCurrencyPickerVisible(true); }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>{converterTo} ▾</Text>
+                        </TouchableOpacity>
                       </View>
+
                     </View>
                     
                     <TouchableOpacity 
