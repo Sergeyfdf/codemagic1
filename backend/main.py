@@ -654,14 +654,19 @@ class ConverterCreate(BaseModel):
 @app.post("/converter/history")
 async def add_conversion(data: ConverterCreate):
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(DB_FILE, timeout=10)
         cursor = conn.cursor()
+        try:
+            cursor.execute("ALTER TABLE converter_history ADD COLUMN title TEXT")
+        except:
+            pass
         cursor.execute("INSERT INTO converter_history (from_currency, to_currency, amount, result, date, title) VALUES (?, ?, ?, ?, ?, ?)",
                       (data.from_currency, data.to_currency, data.amount, data.result, data.date, data.title))
         conn.commit()
         conn.close()
         return {"status": "success"}
     except Exception as e:
+        print(f"Error adding conversion: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/converter/history/{conv_id}")
