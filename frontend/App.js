@@ -776,8 +776,20 @@ export default function App() {
     fetchRates();
   }, []);
 
+  const calculateExpression = (expr) => {
+    try {
+      let safeExpr = expr.replace(/,/g, '.');
+      safeExpr = safeExpr.replace(/[^0-9\.\+\-\*\/\(\)]/g, '');
+      if (!safeExpr) return 0;
+      const result = new Function('return ' + safeExpr)();
+      return parseFloat(result) || 0;
+    } catch (e) {
+      return 0;
+    }
+  };
+
   useEffect(() => {
-    const amountVal = parseFloat(converterAmount.replace(',', '.'));
+    const amountVal = calculateExpression(converterAmount);
     if (!amountVal || isNaN(amountVal) || !exchangeRates) {
       setConverterResult('');
       return;
@@ -790,7 +802,7 @@ export default function App() {
   }, [converterAmount, converterFrom, converterTo, exchangeRates]);
 
   const saveConversionToHistory = async () => {
-    const amountVal = parseFloat(converterAmount.replace(',', '.'));
+    const amountVal = calculateExpression(converterAmount);
     if (!amountVal || isNaN(amountVal) || !converterResult) return;
     
     try {
@@ -802,7 +814,7 @@ export default function App() {
         body: JSON.stringify({
           from_currency: converterFrom,
           to_currency: converterTo,
-          amount: amountVal,
+          amount: parseFloat(amountVal.toFixed(2)),
           result: parseFloat(converterResult),
           date: now_str,
           title: converterTitle
@@ -1811,7 +1823,7 @@ export default function App() {
                           value={converterAmount}
                           onChangeText={setConverterAmount}
                           placeholder="0.00"
-                          keyboardType="numeric"
+                          keyboardType="numbers-and-punctuation"
                           placeholderTextColor="rgba(255,255,255,0.3)"
                         />
                         <TouchableOpacity 
