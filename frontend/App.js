@@ -762,15 +762,11 @@ export default function App() {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const res = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json');
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await res.json();
-        const ratesMap = { 'UAH': 1 };
-        data.forEach(item => {
-          ratesMap[item.cc] = item.rate;
-        });
-        setExchangeRates(ratesMap);
+        setExchangeRates(data.rates);
       } catch (e) {
-        console.log('Failed to fetch NBU rates', e);
+        console.log('Failed to fetch exchange rates', e);
       }
     };
     fetchRates();
@@ -796,8 +792,7 @@ export default function App() {
     }
     const rateFrom = exchangeRates[converterFrom] || 1;
     const rateTo = exchangeRates[converterTo] || 1;
-    // Cross rate: (amount * rateFrom) / rateTo
-    const result = (amountVal * rateFrom) / rateTo;
+    const result = amountVal * (rateTo / rateFrom);
     setConverterResult(result.toFixed(2));
   }, [converterAmount, converterFrom, converterTo, exchangeRates]);
 
