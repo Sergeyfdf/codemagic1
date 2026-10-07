@@ -572,7 +572,8 @@ export default function App() {
           folders: data.folders || [],
           subscriptions: data.subscriptions || [],
           debts: data.debts || [],
-          goals: data.goals || []
+          goals: data.goals || [],
+          conversions: data.conversions || []
         });
 
         const notifsString = JSON.stringify({ s: data.subscriptions, d: data.debts });
