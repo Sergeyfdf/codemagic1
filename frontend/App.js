@@ -56,7 +56,6 @@ const SwipeRow = ({ onDelete, onCancel, children, style }) => {
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       style={style}
     >
-      {/* Левая кнопка — Отменить (свайп вправо) */}
       {hasCancel && (
         <TouchableOpacity
           style={{
@@ -77,12 +76,10 @@ const SwipeRow = ({ onDelete, onCancel, children, style }) => {
         </TouchableOpacity>
       )}
 
-      {/* Контент */}
       <View style={{ width: containerWidth || 300 }}>
         {children}
       </View>
 
-      {/* Правая кнопка — Удалить (свайп влево) */}
       <TouchableOpacity
         style={{
           width: 70,
@@ -115,9 +112,9 @@ export default function App() {
   const [cashModalType, setCashModalType] = useState('add');
   const [cashInputValue, setCashInputValue] = useState('');
   const [cashReason, setCashReason] = useState('');
-  const screenAnim = useRef(new Animated.Value(0)).current; // Для второго меню
-  const screenAnim3 = useRef(new Animated.Value(0)).current; // Для третьего меню
-  const horizontalScrollRef = useRef(null); // Ссылка на скролл кошельков
+  const screenAnim = useRef(new Animated.Value(0)).current;
+  const screenAnim3 = useRef(new Animated.Value(0)).current;
+  const horizontalScrollRef = useRef(null);
   const [wallets, setWallets] = useState([]);
   const [activeWalletIndex, setActiveWalletIndex] = useState(0);
   const [newWalletName, setNewWalletName] = useState('');
@@ -136,7 +133,8 @@ export default function App() {
   const cardDesigns = [
     require('./assets/card1.png'),
     require('./assets/card2.png'),
-    require('./assets/card3.png')
+    require('./assets/card3.png'),
+    require('./assets/card4.png')
   ];
 
   const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -156,7 +154,7 @@ export default function App() {
   const [isAddingDebt, setIsAddingDebt] = useState(false);
   const [newDebtPerson, setNewDebtPerson] = useState('');
   const [newDebtAmount, setNewDebtAmount] = useState('');
-  const [newDebtType, setNewDebtType] = useState('owed_to_me'); // 'owed_to_me' or 'i_owe'
+  const [newDebtType, setNewDebtType] = useState('owed_to_me');
   const [newDebtDeadline, setNewDebtDeadline] = useState('');
   const [newDebtIsRecurring, setNewDebtIsRecurring] = useState(false);
   const [newDebtRecurringPeriod, setNewDebtRecurringPeriod] = useState('Месяц');
@@ -197,17 +195,14 @@ export default function App() {
   const lastSubsRef = useRef('');
 
   useEffect(() => {
-    // Unblock first render
     requestAnimationFrame(() => {
       setIsReady(true);
     });
   }, []);
 
-  // 3 animated values - одна на каждый блок главного экрана
-  const elem0 = useRef(new Animated.Value(0)).current; // баланс
-  const elem1 = useRef(new Animated.Value(0)).current; // карточка
-  const elem2 = useRef(new Animated.Value(0)).current; // транзакции
-  // 0 = на месте, -1 = улетел вверх, 1 = прилетел снизу
+  const elem0 = useRef(new Animated.Value(0)).current;
+  const elem1 = useRef(new Animated.Value(0)).current;
+  const elem2 = useRef(new Animated.Value(0)).current;
 
   const makeElemStyle = (anim) => ({
     opacity: anim.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
@@ -265,8 +260,6 @@ export default function App() {
       }
     };
     loadSettings();
-
-    // Задержка SplashScreen на 3 секунды
     setTimeout(async () => {
       await SplashScreen.hideAsync();
     }, 3000);
@@ -450,7 +443,7 @@ export default function App() {
         const w = data.wallets.find(w => w.id === targetWalletId);
         if (w) currentBal = w.balance;
       } else {
-        currentBal = data.cash_balance; // fallback for very old DB
+        currentBal = data.cash_balance;
       }
 
       const diff = debt.type === 'owed_to_me' ? debt.amount : -debt.amount;
@@ -495,43 +488,39 @@ export default function App() {
         let year = parts[2];
         if (year.length === 2) year = '20' + year;
 
-        // Schedule at 10:00 AM local time
         const paymentDate = new Date(`${year}-${parts[1]}-${parts[0]}T10:00:00`);
         if (isNaN(paymentDate.getTime())) continue;
 
         const now = new Date();
 
-        // 3 days before
         const threeDaysBefore = new Date(paymentDate);
         threeDaysBefore.setDate(threeDaysBefore.getDate() - 3);
         if (threeDaysBefore > now) {
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: `💳 Скоро оплата: ${sub.name}`,
-              body: `Через 3 дня спишется ${sub.amount}. Не забудьте пополнить счет!`,
+              title: `Скоро оплата: ${sub.name}`,
+              body: `Через 3 дня спишется ${sub.amount}.`,
             },
             trigger: { type: 'date', date: threeDaysBefore, channelId: 'default' },
           });
         }
 
-        // 1 day before
         const oneDayBefore = new Date(paymentDate);
         oneDayBefore.setDate(oneDayBefore.getDate() - 1);
         if (oneDayBefore > now) {
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: `⚠️ Завтра оплата: ${sub.name}`,
+              title: `Завтра оплата: ${sub.name}`,
               body: `Завтра спишется ${sub.amount}!`,
             },
             trigger: { type: 'date', date: oneDayBefore, channelId: 'default' },
           });
         }
 
-        // On the day
         if (paymentDate > now) {
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: `💸 Сегодня оплата: ${sub.name}`,
+              title: `Сегодня оплата: ${sub.name}`,
               body: `Сегодня будет списано ${sub.amount}.`,
             },
             trigger: { type: 'date', date: paymentDate, channelId: 'default' },
@@ -762,11 +751,15 @@ export default function App() {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const res = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json');
         const data = await res.json();
-        setExchangeRates(data.rates);
+        const ratesMap = { 'UAH': 1 };
+        data.forEach(item => {
+          ratesMap[item.cc] = item.rate;
+        });
+        setExchangeRates(ratesMap);
       } catch (e) {
-        console.log('Failed to fetch exchange rates', e);
+        console.log('Failed to fetch NBU rates', e);
       }
     };
     fetchRates();
@@ -792,18 +785,18 @@ export default function App() {
     }
     const rateFrom = exchangeRates[converterFrom] || 1;
     const rateTo = exchangeRates[converterTo] || 1;
-    const result = amountVal * (rateTo / rateFrom);
+    const result = (amountVal * rateFrom) / rateTo;
     setConverterResult(result.toFixed(2));
   }, [converterAmount, converterFrom, converterTo, exchangeRates]);
 
   const saveConversionToHistory = async () => {
     const amountVal = calculateExpression(converterAmount);
     if (!amountVal || isNaN(amountVal) || !converterResult) return;
-    
+
     try {
       const now = new Date();
-      const now_str = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-      await fetch(`${API_URL}/converter/history`, {
+      const now_str = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      const res = await fetch(`${API_URL}/converter/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -815,6 +808,11 @@ export default function App() {
           title: converterTitle
         })
       });
+      if (!res.ok) {
+        const errText = await res.text();
+        alert(`Ошибка сервера: ${res.status} ${errText}`);
+        return;
+      }
       fetchMenu3Data();
       setConverterAmount('');
       setConverterTitle('');
@@ -942,7 +940,6 @@ export default function App() {
   const displayTransactions = historyType === 'card' ? cardTransactions : cashTransactions;
 
   const onLayoutRootView = useCallback(async () => {
-    // SplashScreen hides via timeout in loadSettings instead
   }, [isReady]);
 
   if (!isReady) {
@@ -956,14 +953,12 @@ export default function App() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {/* --- MAIN SCREEN --- */}
         <Animated.View
           style={[styles.overlay, { opacity: activeScreen === 'menu2' ? 0 : 1 }]}
           pointerEvents={activeScreen === 'menu2' ? 'none' : 'auto'}
         >
           <StatusBar style="light" />
 
-          {/* Top Arrow Buttons (Left: Menu2, Right: Menu3) */}
           <View style={styles.topHeader}>
             <TouchableOpacity onPress={() => switchScreen('menu2')}>
               <Image source={require('./assets/menu_icon.png')} style={styles.menuIcon} />
@@ -976,7 +971,6 @@ export default function App() {
 
           <View style={styles.container}>
 
-            {/* Liquid Glass TEXT (Balance) */}
             <Animated.View style={[styles.textContainer, makeElemStyle(elem0)]}>
 
               <Text style={[styles.balanceText, styles.shadowLayer]}>
@@ -1017,7 +1011,6 @@ export default function App() {
 
             </Animated.View>
 
-            {/* Standard Flat Card */}
             <Animated.View style={[styles.cardShadow, makeElemStyle(elem1)]}>
               <TouchableOpacity activeOpacity={0.9} style={{ flex: 1, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }} onPress={() => setIsCardSelectionVisible(true)}>
                 <Image
@@ -1028,7 +1021,6 @@ export default function App() {
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Recent Transactions Snippet */}
             <Animated.View style={[makeElemStyle(elem2), { width: '100%', alignItems: 'center' }]}>
               <TouchableOpacity
                 style={styles.transactionsContainer}
@@ -1063,7 +1055,6 @@ export default function App() {
           </View>
         </Animated.View>
 
-        {/* Card Selection Modal */}
         <Modal visible={isCardSelectionVisible} transparent={true} animationType="fade" onRequestClose={() => setIsCardSelectionVisible(false)}>
           <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
             <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setIsCardSelectionVisible(false)} />
@@ -1115,7 +1106,6 @@ export default function App() {
           </BlurView>
         </Modal>
 
-        {/* Currency Picker Modal */}
         <Modal visible={currencyPickerVisible} transparent={true} animationType="fade" onRequestClose={() => setCurrencyPickerVisible(false)}>
           <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
             <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setCurrencyPickerVisible(false)} />
@@ -1146,7 +1136,6 @@ export default function App() {
           </BlurView>
         </Modal>
 
-        {/* Full History Modal */}
         <Modal
           visible={isHistoryVisible}
           animationType="slide"
@@ -1193,7 +1182,6 @@ export default function App() {
           </BlurView>
         </Modal>
 
-        {/* Cash Input Modal */}
         <Modal
           visible={cashModalVisible}
           animationType="fade"
@@ -1242,7 +1230,6 @@ export default function App() {
                       const diff = cashModalType === 'add' ? val : -val;
                       const newBal = currentCashBalance + diff;
 
-                      // Update active wallet locally
                       setWallets(ws => {
                         const nw = [...ws];
                         if (nw[activeWalletIndex]) nw[activeWalletIndex].balance = newBal;
@@ -1269,7 +1256,6 @@ export default function App() {
           </BlurView>
         </Modal>
 
-        {/* --- MENU 2 SCREEN --- */}
         <Animated.View
           pointerEvents={activeScreen === 'menu2' ? 'auto' : 'none'}
           style={[styles.overlay, styles.menu2Container, StyleSheet.absoluteFill, {
@@ -1279,7 +1265,6 @@ export default function App() {
         >
           <StatusBar style="light" />
 
-          {/* Top Arrow Buttons (Left: Menu2, Right: Menu3) */}
           <View style={styles.topHeader}>
             <TouchableOpacity onPress={() => switchScreen('menu2')}>
               <Image source={require('./assets/menu_icon.png')} style={styles.menuIcon} />
@@ -1320,14 +1305,12 @@ export default function App() {
                   }
                 >
 
-                  {/* Goal Photo (if goal) */}
                   {wallet.is_goal === 1 && wallet.photo_uri ? (
                     <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 10 }}>
                       <Image source={{ uri: wallet.photo_uri }} style={{ width: 140, height: 140, borderRadius: 30 }} />
                     </View>
                   ) : null}
 
-                  {/* Nixie Tubes 3D Display for this wallet */}
                   <View style={{ width: '100%', height: 120, marginTop: wallet.is_goal ? 10 : 120, marginBottom: 10 }}>
                     <NixieDisplay balance={wallet.balance} />
                   </View>
@@ -1338,7 +1321,6 @@ export default function App() {
                     </Text>
                   )}
 
-                  {/* Goal Progress (if goal) */}
                   {wallet.is_goal === 1 && wallet.target_amount > 0 ? (
                     <View style={{ width: '80%', marginTop: 5, marginBottom: 20, alignSelf: 'center' }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -1351,7 +1333,6 @@ export default function App() {
                     </View>
                   ) : null}
 
-                  {/* Action Buttons */}
                   <View style={styles.actionButtonsRow}>
                     <TouchableOpacity style={styles.actionButton} onPress={() => { setCashModalType('sub'); setCashModalVisible(true); }} activeOpacity={0.7}>
                       <Text style={styles.actionButtonText}>-</Text>
@@ -1360,8 +1341,6 @@ export default function App() {
                       <Text style={styles.actionButtonText}>+</Text>
                     </TouchableOpacity>
                   </View>
-
-                  {/* Cash Transactions Snippet */}
                   <View style={{ width: '100%', alignItems: 'center', marginTop: 20 }}>
                     <TouchableOpacity
                       style={styles.transactionsContainer}
@@ -1394,8 +1373,6 @@ export default function App() {
                   </View>
                 </ScrollView>
               ))}
-
-              {/* Create Wallet View */}
               <View style={{ width: screenWidth, alignItems: 'center', paddingHorizontal: 20, transform: [{ scaleX: -1 }], paddingBottom: 100 }}>
                 <Text style={{ color: '#fff', fontSize: 24, marginTop: 80, marginBottom: 30, fontWeight: '600' }}>Новый кошелек</Text>
 
@@ -1472,7 +1449,6 @@ export default function App() {
           </View>
         </Animated.View>
 
-        {/* --- MENU 3 SCREEN --- */}
         <Animated.View
           pointerEvents={activeScreen === 'menu3' ? 'auto' : 'none'}
           style={[styles.overlay, StyleSheet.absoluteFill, {
@@ -1481,8 +1457,6 @@ export default function App() {
           }]}
         >
           <StatusBar style="light" />
-
-          {/* Top Arrow Buttons (Left: Menu2, Right: Menu3) */}
           <View style={styles.topHeader}>
             <TouchableOpacity onPress={() => switchScreen('menu2')}>
               <Image source={require('./assets/menu_icon.png')} style={styles.menuIcon} />
@@ -1577,7 +1551,6 @@ export default function App() {
                           <View style={{ paddingBottom: 100 }}>
                             <Text style={{ color: '#fff', fontSize: 22, fontWeight: '600', marginBottom: 20 }}>{folder.name}</Text>
 
-                            {/* Подпапки */}
                             {subFolders.map(f => {
                               const total = getFolderTotal(f.id);
                               return (
@@ -1596,7 +1569,6 @@ export default function App() {
                               );
                             })}
 
-                            {/* Товары */}
                             {folder.items && folder.items.map(item => (
                               <SwipeRow key={item.id} onDelete={() => deleteItem(item.id)} style={{ marginBottom: 12 }}>
                                 <TouchableOpacity
@@ -1618,13 +1590,13 @@ export default function App() {
                               </SwipeRow>
                             ))}
 
-                            {/* Добавление подпапки */}
+
                             <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.1)', padding: 10, borderRadius: 12, marginTop: 10, alignItems: 'center' }}>
                               <TextInput style={[styles.cashInput, { flex: 1, marginBottom: 0, height: 40, padding: 8, fontSize: 16 }]} value={newFolderName} onChangeText={setNewFolderName} placeholder="Новая подпапка" placeholderTextColor="rgba(255,255,255,0.3)" />
                               <TouchableOpacity style={{ paddingHorizontal: 15 }} onPress={createFolder}><Text style={{ color: '#4ade80', fontSize: 16, fontWeight: '600' }}>Создать</Text></TouchableOpacity>
                             </View>
 
-                            {/* Добавление товара */}
+
                             {isAddingItem ? (
                               <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, marginTop: 10 }}>
                                 <TextInput style={[styles.cashInput, { marginBottom: 10 }]} value={newItemTitle} onChangeText={setNewItemTitle} placeholder="Название товара" placeholderTextColor="rgba(255,255,255,0.3)" />
@@ -1645,7 +1617,7 @@ export default function App() {
                       })()}
                     </>
                   )}
-                  {/* Moving Item Modal */}
+
                   <Modal
                     visible={!!movingItem}
                     transparent={true}
@@ -1810,8 +1782,8 @@ export default function App() {
                 <View style={{ paddingBottom: 100 }}>
                   <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, marginBottom: 20 }}>
                     <View style={{ marginBottom: 15 }}>
-                      
-                      {/* У меня есть (FROM) */}
+
+
                       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, marginBottom: 15 }}>
                         <TextInput
                           style={[styles.cashInput, { flex: 1, borderBottomWidth: 0, marginBottom: 0, padding: 15, textAlign: 'left', fontSize: 24 }]}
@@ -1821,26 +1793,26 @@ export default function App() {
                           keyboardType="numbers-and-punctuation"
                           placeholderTextColor="rgba(255,255,255,0.3)"
                         />
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={{ padding: 15, justifyContent: 'center', minWidth: 80, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.1)' }}
                           onPress={() => { setCurrencyPickerTarget('from'); setCurrencyPickerVisible(true); }}
                         >
                           <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>{converterFrom} ▾</Text>
                         </TouchableOpacity>
                       </View>
-                      
+
                       <View style={{ alignItems: 'center', marginBottom: 15 }}>
                         <Ionicons name="swap-vertical-outline" size={28} color="rgba(255,255,255,0.5)" />
                       </View>
-                      
-                      {/* Я получу (TO) */}
+
+
                       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 }}>
                         <View style={{ flex: 1, padding: 15, justifyContent: 'center' }}>
                           <Text style={{ color: converterResult ? '#4ade80' : 'rgba(255,255,255,0.3)', fontSize: 24, fontWeight: '600' }}>
                             {converterResult ? converterResult : '0.00'}
                           </Text>
                         </View>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={{ padding: 15, justifyContent: 'center', minWidth: 80, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.1)' }}
                           onPress={() => { setCurrencyPickerTarget('to'); setCurrencyPickerVisible(true); }}
                         >
@@ -1858,8 +1830,8 @@ export default function App() {
                         placeholderTextColor="rgba(255,255,255,0.3)"
                       />
                     </View>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       style={{ backgroundColor: 'rgba(74,222,128,0.2)', padding: 12, borderRadius: 8, alignItems: 'center' }}
                       onPress={saveConversionToHistory}
                     >
@@ -1870,7 +1842,7 @@ export default function App() {
                   </View>
 
                   <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 10 }}>История конвертаций</Text>
-                  
+
                   {menu3Data.conversions && menu3Data.conversions.map(conv => (
                     <SwipeRow key={conv.id} onDelete={() => deleteConversion(conv.id)} style={{ marginBottom: 12 }}>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, width: screenWidth - 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2007,7 +1979,6 @@ export default function App() {
           </View>
         </Animated.View>
 
-        {/* Debt Wallet Selection Modal */}
         <Modal
           visible={!!debtToProcess}
           transparent={true}
@@ -2134,11 +2105,10 @@ const styles = StyleSheet.create({
     color: 'transparent',
   },
 
-  // Transactions Snippet Styles
   transactionsContainer: {
     width: '90%',
-    marginTop: 30, // Сдвигаем ниже
-    paddingHorizontal: 10, // Оставляем только боковые отступы
+    marginTop: 30,
+    paddingHorizontal: 10,
   },
   transactionsHeader: {
     flexDirection: 'row',
