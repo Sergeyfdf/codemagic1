@@ -184,6 +184,14 @@ export default function App() {
   const [goalProgressId, setGoalProgressId] = useState(null);
   const [goalProgressAmount, setGoalProgressAmount] = useState('');
 
+  const [converterFrom, setConverterFrom] = useState('USD');
+  const [converterTo, setConverterTo] = useState('UAH');
+  const [converterAmount, setConverterAmount] = useState('');
+  const [converterResult, setConverterResult] = useState('');
+  const [exchangeRates, setExchangeRates] = useState(null);
+  const [currencyPickerVisible, setCurrencyPickerVisible] = useState(false);
+  const [currencyPickerTarget, setCurrencyPickerTarget] = useState('from');
+
   const [isReady, setIsReady] = useState(false);
   const lastSubsRef = useRef('');
 
@@ -750,6 +758,66 @@ export default function App() {
     fetchMenu3Data();
   };
 
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const res = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json');
+        const data = await res.json();
+        const ratesMap = { 'UAH': 1 };
+        data.forEach(item => {
+          ratesMap[item.cc] = item.rate;
+        });
+        setExchangeRates(ratesMap);
+      } catch (e) {
+        console.log('Failed to fetch NBU rates', e);
+      }
+    };
+    fetchRates();
+  }, []);
+
+  useEffect(() => {
+    const amountVal = parseFloat(converterAmount.replace(',', '.'));
+    if (!amountVal || isNaN(amountVal) || !exchangeRates) {
+      setConverterResult('');
+      return;
+    }
+    const rateFrom = exchangeRates[converterFrom] || 1;
+    const rateTo = exchangeRates[converterTo] || 1;
+    // Cross rate: (amount * rateFrom) / rateTo
+    const result = (amountVal * rateFrom) / rateTo;
+    setConverterResult(result.toFixed(2));
+  }, [converterAmount, converterFrom, converterTo, exchangeRates]);
+
+  const saveConversionToHistory = async () => {
+    const amountVal = parseFloat(converterAmount.replace(',', '.'));
+    if (!amountVal || isNaN(amountVal) || !converterResult) return;
+    
+    try {
+      const now = new Date();
+      const now_str = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+      await fetch(`${API_URL}/converter/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_currency: converterFrom,
+          to_currency: converterTo,
+          amount: amountVal,
+          result: parseFloat(converterResult),
+          date: now_str
+        })
+      });
+      fetchMenu3Data();
+      setConverterAmount('');
+    } catch (e) {
+      console.log('Error saving conversion', e);
+    }
+  };
+
+  const deleteConversion = async (id) => {
+    await fetch(`${API_URL}/converter/history/${id}`, { method: 'DELETE' });
+    fetchMenu3Data();
+  };
+
   const getDaysLeftText = (dateStr) => {
     if (!dateStr) return '';
     const parts = dateStr.split('.');
@@ -864,9 +932,7 @@ export default function App() {
   const displayTransactions = historyType === 'card' ? cardTransactions : cashTransactions;
 
   const onLayoutRootView = useCallback(async () => {
-    if (isReady) {
-      await SplashScreen.hideAsync();
-    }
+    // SplashScreen hides via timeout in loadSettings instead
   }, [isReady]);
 
   if (!isReady) {
@@ -1035,6 +1101,36 @@ export default function App() {
               <TouchableOpacity style={{ marginTop: 40, padding: 15 }} onPress={() => setIsCardSelectionVisible(false)}>
                 <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 18 }}>Отмена</Text>
               </TouchableOpacity>
+            </View>
+          </BlurView>
+        </Modal>
+
+        {/* Currency Picker Modal */}
+        <Modal visible={currencyPickerVisible} transparent={true} animationType="fade" onRequestClose={() => setCurrencyPickerVisible(false)}>
+          <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setCurrencyPickerVisible(false)} />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={{ width: '80%', backgroundColor: '#1c1c1e', borderRadius: 24, padding: 24, maxHeight: '70%' }}>
+                <Text style={{ color: '#fff', fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' }}>Выберите валюту</Text>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {['UAH', 'USD', 'EUR', 'PLN', 'GBP', 'CHF', 'CZK', 'CAD', 'AUD'].map(cur => (
+                    <TouchableOpacity
+                      key={cur}
+                      style={{ paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}
+                      onPress={() => {
+                        if (currencyPickerTarget === 'from') setConverterFrom(cur);
+                        else setConverterTo(cur);
+                        setCurrencyPickerVisible(false);
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 18, textAlign: 'center' }}>{cur}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity style={{ marginTop: 20, padding: 15, alignItems: 'center' }} onPress={() => setCurrencyPickerVisible(false)}>
+                  <Text style={{ color: '#ef4444', fontSize: 16 }}>Закрыть</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </BlurView>
         </Modal>
@@ -1398,12 +1494,13 @@ export default function App() {
                   }
                 }}
               >
-                {(showDebugTab ? ['wishlist', 'subs', 'debts', 'summary', 'debug'] : ['wishlist', 'subs', 'debts', 'summary']).map((tab) => {
+                {(showDebugTab ? ['wishlist', 'subs', 'debts', 'summary', 'converter', 'debug'] : ['wishlist', 'subs', 'debts', 'summary', 'converter']).map((tab) => {
                   const labels = {
                     'wishlist': 'Хотелки',
                     'subs': 'Подписки',
                     'debts': 'Долги',
                     'summary': 'Сводка',
+                    'converter': 'Конвертер',
                     'debug': 'Дебаг'
                   };
                   return (
@@ -1694,6 +1791,80 @@ export default function App() {
                     <TouchableOpacity style={{ padding: 16, alignItems: 'center', marginTop: 10 }} onPress={() => setIsAddingDebt(true)}>
                       <Text style={{ color: '#4ade80', fontSize: 16 }}>+ Добавить долг</Text>
                     </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {menu3Tab === 'converter' && (
+                <View style={{ paddingBottom: 100 }}>
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, marginBottom: 20 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 }}>
+                          <TextInput
+                            style={[styles.cashInput, { flex: 1, borderBottomWidth: 0, marginBottom: 0, padding: 10 }]}
+                            value={converterAmount}
+                            onChangeText={setConverterAmount}
+                            placeholder="Сумма"
+                            keyboardType="numeric"
+                            placeholderTextColor="rgba(255,255,255,0.3)"
+                          />
+                          <TouchableOpacity 
+                            style={{ padding: 10, justifyContent: 'center', minWidth: 60, alignItems: 'center' }}
+                            onPress={() => { setCurrencyPickerTarget('from'); setCurrencyPickerVisible(true); }}
+                          >
+                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{converterFrom} ▾</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      
+                      <View style={{ paddingHorizontal: 15, justifyContent: 'center' }}>
+                        <Ionicons name="arrow-forward-outline" size={24} color="rgba(255,255,255,0.5)" />
+                      </View>
+                      
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, height: 48, paddingHorizontal: 10 }}>
+                          <Text style={{ color: converterResult ? '#4ade80' : 'rgba(255,255,255,0.3)', flex: 1, fontSize: 16 }}>
+                            {converterResult ? converterResult : 'Результат'}
+                          </Text>
+                          <TouchableOpacity 
+                            style={{ padding: 10, justifyContent: 'center', minWidth: 60, alignItems: 'center' }}
+                            onPress={() => { setCurrencyPickerTarget('to'); setCurrencyPickerVisible(true); }}
+                          >
+                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{converterTo} ▾</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                    
+                    <TouchableOpacity 
+                      style={{ backgroundColor: 'rgba(74,222,128,0.2)', padding: 12, borderRadius: 8, alignItems: 'center' }}
+                      onPress={saveConversionToHistory}
+                    >
+                      <Text style={{ color: '#4ade80', fontSize: 16, fontWeight: '600' }}>
+                        Сохранить в историю
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 10 }}>История конвертаций</Text>
+                  
+                  {menu3Data.conversions && menu3Data.conversions.map(conv => (
+                    <SwipeRow key={conv.id} onDelete={() => deleteConversion(conv.id)} style={{ marginBottom: 12 }}>
+                      <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, width: screenWidth - 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View>
+                          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '500' }}>
+                            {conv.amount} {conv.from_currency} → {conv.result} {conv.to_currency}
+                          </Text>
+                          <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 4 }}>
+                            {conv.date}
+                          </Text>
+                        </View>
+                      </View>
+                    </SwipeRow>
+                  ))}
+                  {(!menu3Data.conversions || menu3Data.conversions.length === 0) && (
+                    <Text style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 20 }}>История пуста</Text>
                   )}
                 </View>
               )}
