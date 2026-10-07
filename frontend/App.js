@@ -188,6 +188,7 @@ export default function App() {
   const [converterTo, setConverterTo] = useState('UAH');
   const [converterAmount, setConverterAmount] = useState('');
   const [converterResult, setConverterResult] = useState('');
+  const [converterTitle, setConverterTitle] = useState('');
   const [exchangeRates, setExchangeRates] = useState(null);
   const [currencyPickerVisible, setCurrencyPickerVisible] = useState(false);
   const [currencyPickerTarget, setCurrencyPickerTarget] = useState('from');
@@ -803,11 +804,13 @@ export default function App() {
           to_currency: converterTo,
           amount: amountVal,
           result: parseFloat(converterResult),
-          date: now_str
+          date: now_str,
+          title: converterTitle
         })
       });
       fetchMenu3Data();
       setConverterAmount('');
+      setConverterTitle('');
     } catch (e) {
       console.log('Error saving conversion', e);
     }
@@ -1839,6 +1842,15 @@ export default function App() {
                       </View>
 
                     </View>
+                    <View style={{ marginBottom: 15 }}>
+                      <TextInput
+                        style={[styles.cashInput, { padding: 12, fontSize: 16, marginBottom: 0 }]}
+                        value={converterTitle}
+                        onChangeText={setConverterTitle}
+                        placeholder="Название операции (опционально)"
+                        placeholderTextColor="rgba(255,255,255,0.3)"
+                      />
+                    </View>
                     
                     <TouchableOpacity 
                       style={{ backgroundColor: 'rgba(74,222,128,0.2)', padding: 12, borderRadius: 8, alignItems: 'center' }}
@@ -1856,7 +1868,12 @@ export default function App() {
                     <SwipeRow key={conv.id} onDelete={() => deleteConversion(conv.id)} style={{ marginBottom: 12 }}>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 12, width: screenWidth - 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <View>
-                          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '500' }}>
+                          {conv.title ? (
+                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 }}>
+                              {conv.title}
+                            </Text>
+                          ) : null}
+                          <Text style={{ color: conv.title ? 'rgba(255,255,255,0.8)' : '#fff', fontSize: 16, fontWeight: '500' }}>
                             {conv.amount} {conv.from_currency} → {conv.result} {conv.to_currency}
                           </Text>
                           <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 4 }}>

@@ -154,9 +154,14 @@ def init_db():
             to_currency TEXT,
             amount REAL,
             result REAL,
-            date TEXT
+            date TEXT,
+            title TEXT
         )
     ''')
+    try:
+        cursor.execute("ALTER TABLE converter_history ADD COLUMN title TEXT")
+    except sqlite3.OperationalError:
+        pass
     
     # Инициализируем нулевой баланс, если таблица пуста
     cursor.execute('SELECT count(*) FROM balance')
@@ -644,14 +649,15 @@ class ConverterCreate(BaseModel):
     amount: float
     result: float
     date: str
+    title: str = ""
 
 @app.post("/converter/history")
 async def add_conversion(data: ConverterCreate):
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO converter_history (from_currency, to_currency, amount, result, date) VALUES (?, ?, ?, ?, ?)",
-                      (data.from_currency, data.to_currency, data.amount, data.result, data.date))
+        cursor.execute("INSERT INTO converter_history (from_currency, to_currency, amount, result, date, title) VALUES (?, ?, ?, ?, ?, ?)",
+                      (data.from_currency, data.to_currency, data.amount, data.result, data.date, data.title))
         conn.commit()
         conn.close()
         return {"status": "success"}
