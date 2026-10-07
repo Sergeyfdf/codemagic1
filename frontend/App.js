@@ -256,6 +256,11 @@ export default function App() {
       }
     };
     loadSettings();
+
+    // Задержка SplashScreen на 3 секунды
+    setTimeout(async () => {
+      await SplashScreen.hideAsync();
+    }, 3000);
   }, []);
 
   const updateCardDesignIndex = async (index) => {
